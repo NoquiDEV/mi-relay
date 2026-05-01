@@ -10,6 +10,16 @@ const wss = new WebSocketServer({ server });
 app.use((req, res, next) => {
     res.setHeader('ngrok-skip-browser-warning', 'true');
     res.setHeader('Access-Control-Allow-Origin', '*');
+
+    // 🔥 ESTO ES LO QUE TE FALTA
+    res.setHeader(
+        'Content-Security-Policy',
+        "frame-ancestors https://discord.com https://*.discord.com"
+    );
+
+    // 🔥 Por si algún proxy mete esto
+    res.removeHeader('X-Frame-Options');
+
     next();
 });
 
@@ -43,7 +53,7 @@ wss.on('connection', (ws, req) => {
     } else if (req.url === '/activity') {
         console.log('✅ Activity conectada');
         activityClients.add(ws);
-    
+
         // Reenviar comandos de la Activity a Unity
         ws.on('message', (data) => {
             console.log('🎮 Comando de Activity:', data.toString());
@@ -51,7 +61,7 @@ wss.on('connection', (ws, req) => {
                 unityClient.send(data.toString());
             }
         });
-    
+
         ws.on('close', () => {
             console.log('❌ Activity desconectada');
             activityClients.delete(ws);
