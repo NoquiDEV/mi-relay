@@ -7,6 +7,30 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
+const https = require('https');
+
+app.use(express.json());
+
+app.post('/token', async (req, res) => {
+    const { code } = req.body;
+
+    const body = new URLSearchParams({
+        client_id:     '1290495318248390768',
+        client_secret: 'gusYHg96PnDcnEn4L23FVVNzp--2lURU',
+        grant_type:    'authorization_code',
+        code:          code,
+    });
+
+    const response = await fetch('https://discord.com/api/oauth2/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body
+    });
+
+    const data = await response.json();
+    res.json({ access_token: data.access_token });
+});
+
 app.use((req, res, next) => {
     res.setHeader('ngrok-skip-browser-warning', 'true');
     res.setHeader('Access-Control-Allow-Origin', '*');
