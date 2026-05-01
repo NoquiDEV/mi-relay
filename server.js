@@ -43,6 +43,15 @@ wss.on('connection', (ws, req) => {
     } else if (req.url === '/activity') {
         console.log('✅ Activity conectada');
         activityClients.add(ws);
+    
+        // Reenviar comandos de la Activity a Unity
+        ws.on('message', (data) => {
+            console.log('🎮 Comando de Activity:', data.toString());
+            if (unityClient && unityClient.readyState === 1) {
+                unityClient.send(data.toString());
+            }
+        });
+    
         ws.on('close', () => {
             console.log('❌ Activity desconectada');
             activityClients.delete(ws);
