@@ -1,0 +1,54 @@
+const express = require('express');
+const { WebSocketServer } = require('ws');
+const http = require('http');
+const path = require('path');
+
+const app = express();
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+
+app.use((req, res, next) => {
+    res.setHeader('ngrok-skip-browser-warning', 'true');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    next();
+});
+
+// Servir los archivos de la Activity
+app.use(express.static(path.join(__dirname, '../mi-activity/dist')));
+
+const activityClients = new Set();
+let unityClient = null;
+
+wss.on('connection', (ws, req) => {
+    console.log('Nueva conexión, URL:', req.url);
+
+    if (req.url === '/unity') {
+        console.log('✅ Unity conectado');
+        unityClient = ws;
+
+        ws.on('message', (data) => {
+            console.log('📦 Mensaje de Unity, clientes:', activityClients.size);
+            for (const client of activityClients) {
+                if (client.readyState === 1) {
+                    client.send(data.toString());
+                }
+            }
+        });
+
+        ws.on('close', () => {
+            console.log('❌ Unity desconectado');
+            unityClient = null;
+        });
+
+    } else if (req.url === '/activity') {
+        console.log('✅ Activity conectada');
+        activityClients.add(ws);
+        ws.on('close', () => {
+            console.log('❌ Activity desconectada');
+            activityClients.delete(ws);
+        });
+    }
+});
+
+const PORT = 3000;
+server.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));
